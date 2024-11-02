@@ -6,10 +6,13 @@ import (
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
+	"github.com/wailsapp/wails/v2/pkg/menu"
+	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist/spa
@@ -21,6 +24,25 @@ var icon []byte
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
+	serialManager := NewSerialManager()
+
+	// Create a new menu
+	AppMenu := menu.NewMenu()
+	FileMenu := AppMenu.AddSubmenu("File")
+	// FileMenu.AddText("&Open", keys.CmdOrCtrl("o"), openFile)
+	// FileMenu.AddSeparator()
+	FileMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
+		runtime.Quit(app.ctx)
+	})
+	EditMenu := AppMenu.AddSubmenu("View")
+	EditMenu.AddText("Reload", keys.CmdOrCtrl("r"), func(_ *menu.CallbackData) {
+		runtime.WindowReload(app.ctx)
+	})
+	EditMenu.AddText("Reload App", nil, func(_ *menu.CallbackData) {
+		runtime.WindowReloadApp(app.ctx)
+	})
+	// EditMenu.AddText("Redo", keys.CmdOrCtrl(keys.Shift("z")), redo)
+	// EditMenu.AddText("Select All", keys.CmdOrCtrl("a"), selectAll)
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -40,7 +62,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		Menu:             nil,
+		Menu:             AppMenu,
 		Logger:           nil,
 		LogLevel:         logger.DEBUG,
 		OnStartup:        app.startup,
@@ -50,6 +72,7 @@ func main() {
 		WindowStartState: options.Normal,
 		Bind: []interface{}{
 			app,
+			serialManager,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

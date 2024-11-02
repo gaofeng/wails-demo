@@ -1,47 +1,39 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+  <q-page class="row items-left">
+    <div class="row q-pa-sm">
+      <q-select
+        :options="splist"
+        v-model="portPath"
+        label="串口列表"
+        style="width: 250px"
+      ></q-select>
+      <q-btn @click="OpenSerialPort"> 打开串口 </q-btn>
+      <q-btn @click="CloseSerialPort"> 关闭串口 </q-btn>
+    </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
+// import { useQuasar } from 'quasar';
+import { LogDebug } from 'app/wailsjs/runtime/runtime';
+import { onMounted, ref } from 'vue';
+import { GetPortList } from 'app/wailsjs/go/main/SerialManager';
+// const $q = useQuasar();
 
-defineOptions({
-  name: 'IndexPage'
-});
-
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1'
-  },
-  {
-    id: 2,
-    content: 'ct2'
-  },
-  {
-    id: 3,
-    content: 'ct3'
-  },
-  {
-    id: 4,
-    content: 'ct4'
-  },
-  {
-    id: 5,
-    content: 'ct5'
+let splist = ref<Array<object>>([]);
+let portPath = ref<{ value: string; label: string }>();
+onMounted(async () => {
+  LogDebug('Index page mounted.');
+  let list = await GetPortList();
+  splist.value = [];
+  for (let i = 0; i < list.length; i++) {
+    splist.value.push({
+      label: `${list[i].Name} - ${list[i].Product}`,
+      value: list[i].Name,
+    });
   }
-]);
-
-const meta = ref<Meta>({
-  totalCount: 1200
 });
+
+function OpenSerialPort(): void {}
+function CloseSerialPort(): void {}
 </script>

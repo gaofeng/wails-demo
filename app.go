@@ -2,10 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -23,15 +19,6 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	// Perform your setup here
 	a.ctx = ctx
-	a.ctx = ctx
-	go func() {
-		buf := make([]byte, 5)
-		for {
-			buf[0]++
-			time.Sleep(2 * time.Second)
-			runtime.EventsEmit(a.ctx, "backendMessage", buf)
-		}
-	}()
 }
 
 // domReady is called after front-end resources have been loaded
@@ -49,9 +36,4 @@ func (a *App) beforeClose(ctx context.Context) (prevent bool) {
 // shutdown is called at application termination
 func (a *App) shutdown(ctx context.Context) {
 	// Perform your teardown here
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
