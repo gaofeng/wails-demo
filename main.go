@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"log"
 
@@ -20,6 +21,10 @@ var assets embed.FS
 
 //go:embed build/appicon.png
 var icon []byte
+
+func Startup(ctx context.Context) {
+
+}
 
 func main() {
 	// Create an instance of the app structure
@@ -62,10 +67,13 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		Menu:             AppMenu,
-		Logger:           nil,
-		LogLevel:         logger.DEBUG,
-		OnStartup:        app.startup,
+		Menu:     AppMenu,
+		Logger:   nil,
+		LogLevel: logger.DEBUG,
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx)
+			serialManager.startup(ctx)
+		},
 		OnDomReady:       app.domReady,
 		OnBeforeClose:    app.beforeClose,
 		OnShutdown:       app.shutdown,

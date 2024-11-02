@@ -1,39 +1,115 @@
 <template>
-  <q-page class="row items-left">
-    <div class="row q-pa-sm">
-      <q-select
-        :options="splist"
-        v-model="portPath"
-        label="串口列表"
-        style="width: 250px"
-      ></q-select>
-      <q-btn @click="OpenSerialPort"> 打开串口 </q-btn>
-      <q-btn @click="CloseSerialPort"> 关闭串口 </q-btn>
+  <q-page>
+    <div class="q-pa-md">
+      <div class="row items-center justify-left">
+        <q-select
+          filled
+          :options="splist"
+          v-model="selectedPort"
+          label="串口列表"
+          style="width: 150px"
+          :display-value="selectedPort?.value"
+        >
+          <template v-slot:append>
+            <q-icon
+              v-if="selectedPort !== null"
+              class="cursor-pointer"
+              name="clear"
+              @click.stop.prevent="selectedPort = null"
+            />
+          </template>
+        </q-select>
+        <q-btn color="primary" @click="OpenSerialPort" class="q-ml-md">
+          打开串口
+        </q-btn>
+        <q-btn color="purple" @click="CloseSerialPort" class="q-ml-md">
+          关闭串口
+        </q-btn>
+        <q-btn color="black" @click="SendDataTest" class="q-ml-md">
+          发送数据
+        </q-btn>
+      </div>
+      <div>Selected COM: {{ selectedPort?.value }}</div>
+      <div>Selected COM Label: {{ selectedPort?.friendlyName }}</div>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
 // import { useQuasar } from 'quasar';
-import { LogDebug } from 'app/wailsjs/runtime/runtime';
+import { EventsOn, LogDebug } from 'app/wailsjs/runtime/runtime';
 import { onMounted, ref } from 'vue';
-import { GetPortList } from 'app/wailsjs/go/main/SerialManager';
+import {
+  ClosePort,
+  GetPortList,
+  OpenPort,
+  SendData,
+} from 'app/wailsjs/go/main/SerialManager';
 // const $q = useQuasar();
+interface PortOpType {
+  label: string;
+  value: string;
+  friendlyName: string;
+}
+let splist = ref<Array<PortOpType>>([]);
+let selectedPort = ref<PortOpType | null>();
 
-let splist = ref<Array<object>>([]);
-let portPath = ref<{ value: string; label: string }>();
+function base64ToHexWithSpaces(base64Str: string): string {
+  // 解码 Base64 字符串为字节数组
+  const binaryStr = atob(base64Str);
+  // 将每个字符转换为其十六进制表示，并用空格分隔
+  const hexArray = [];
+  for (let i = 0; i < binaryStr.length; i++) {
+    const hex = binaryStr
+      .charCodeAt(i)
+      .toString(16)
+      .toUpperCase()
+      .padStart(2, '0');
+    hexArray.push(hex);
+  }
+
+  // 用空格连接数组元素
+  return hexArray.join(' ');
+}
+
 onMounted(async () => {
   LogDebug('Index page mounted.');
   let list = await GetPortList();
-  splist.value = [];
   for (let i = 0; i < list.length; i++) {
     splist.value.push({
       label: `${list[i].Name} - ${list[i].Product}`,
       value: list[i].Name,
+      friendlyName: list[i].Product,
     });
   }
 });
 
-function OpenSerialPort(): void {}
-function CloseSerialPort(): void {}
+async function OpenSerialPort(): Promise<void> {
+  try {
+    if (selectedPort.value != null) {
+      const portName = selectedPort.value?.value;
+      await OpenPort(portName, 38400);
+      EventsOn(`serial-data-${portName}`, (data) => {
+        console.log(
+          `Received data from ${portName}:`,
+          base64ToHexWithSpaces(data)
+        );
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+async function CloseSerialPort(): Promise<void> {
+  if (selectedPort.value != null) {
+    await ClosePort(selectedPort.value?.value);
+  }
+}
+
+async function SendDataTest(): Promise<void> {
+  const data = Array.from('hello world').map((char) => char.charCodeAt(0));
+  if (selectedPort.value != null) {
+    await SendData(selectedPort.value?.value, data);
+  }
+}
 </script>
