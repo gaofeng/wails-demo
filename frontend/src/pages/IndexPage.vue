@@ -45,6 +45,12 @@ import {
   OpenPort,
   SendData,
 } from 'app/wailsjs/go/main/SerialManager';
+import { debug } from 'debug';
+import { CustomStream } from 'app/modbus/CustomStream';
+import { ModbusRTUServer } from 'app/modbus/modbus';
+import { Buffer } from 'buffer';
+
+var debug_log = debug('wailsjs');
 // const $q = useQuasar();
 interface PortOpType {
   label: string;
@@ -53,6 +59,27 @@ interface PortOpType {
 }
 let splist = ref<Array<PortOpType>>([]);
 let selectedPort = ref<PortOpType | null>();
+
+class SerialStream extends CustomStream {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  write(chunk: Buffer, _callback?: (error?: Error | null) => void) {
+    if (!Buffer.isBuffer(chunk)) {
+      throw new Error('chunk must be a Buffer');
+    }
+    const data = Array.from(chunk);
+    if (selectedPort.value != null) {
+      SendData(selectedPort.value.value, data).then(() =>{
+        if (_callback != null) {
+          _callback();
+        }
+      });
+    }
+    // 返回 true 表示可以继续写入
+    return true;
+  }
+}
+
+const serial = new SerialStream();
 
 function base64ToHexWithSpaces(base64Str: string): string {
   // 解码 Base64 字符串为字节数组
@@ -74,6 +101,7 @@ function base64ToHexWithSpaces(base64Str: string): string {
 
 onMounted(async () => {
   LogDebug('Index page mounted.');
+  debug_log('Index page mounted');
   let list = await GetPortList();
   for (let i = 0; i < list.length; i++) {
     splist.value.push({
@@ -88,12 +116,20 @@ async function OpenSerialPort(): Promise<void> {
   try {
     if (selectedPort.value != null) {
       const portName = selectedPort.value?.value;
+      debug_log('OpenSerialPort:%s', portName);
       await OpenPort(portName, 38400);
-      EventsOn(`serial-data-${portName}`, (data) => {
-        console.log(
-          `Received data from ${portName}:`,
-          base64ToHexWithSpaces(data)
-        );
+      EventsOn(`serial-data-${portName}`, (base64Str) => {
+        // console.log(
+        //   `Received data from ${portName}:`,
+        //   base64ToHexWithSpaces(data)
+        // );
+        const binaryStr = atob(base64Str);
+        const numberArray = [];
+        for (let i = 0; i < binaryStr.length; i++) {
+          numberArray.push(binaryStr.charCodeAt(i));
+        }
+        const buf = Buffer.from(numberArray);
+        serial.emit('data', buf);
       });
     }
   } catch (err) {
@@ -112,4 +148,11 @@ async function SendDataTest(): Promise<void> {
     await SendData(selectedPort.value?.value, data);
   }
 }
+
+let MBRTUServer: ModbusRTUServer;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+MBRTUServer = new ModbusRTUServer(serial, {
+  holding: Buffer.alloc(100, 0x00),
+  coils: Buffer.alloc(100, 0x00),
+});
 </script>
