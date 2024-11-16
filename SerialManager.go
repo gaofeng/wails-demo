@@ -45,20 +45,26 @@ func (s *SerialManager) OpenPort(portName string, baudRate int) error {
 		return err
 	}
 	runtime.LogDebug(s.ctx, "open port"+portName)
+
 	s.ports[portName] = port
 
 	go func(portName string, port serial.Port) {
-		buffer := make([]byte, 100)
+		buffer := make([]byte, 512)
 		for {
 			n, err := port.Read(buffer)
 			if err != nil {
-				runtime.EventsEmit(s.ctx, "serial-error-"+portName, err.Error())
+				_, exists := s.ports[portName]
+				if exists {
+					runtime.EventsEmit(s.ctx, "serial-error-"+portName, err.Error())
+				}
 				break
 			}
 			if n > 0 {
-				runtime.EventsEmit(s.ctx, "serial-data-"+portName, buffer[:n])
+				eventName := "serial-data-" + portName
+				runtime.EventsEmit(s.ctx, eventName, buffer[:n])
 			}
 		}
+		s.ClosePort(portName)
 	}(portName, port)
 
 	return nil
@@ -69,11 +75,16 @@ func (s *SerialManager) ClosePort(portName string) error {
 	defer s.mu.Unlock()
 
 	if port, exists := s.ports[portName]; exists {
-		err := port.Close()
 		delete(s.ports, portName)
+		err := port.Close()
 		return err
 	}
 	return nil
+}
+
+func (s *SerialManager) PortIsOpen(portName string) bool {
+	_, exists := s.ports[portName]
+	return exists
 }
 
 func (s *SerialManager) SendData(portName string, data []byte) error {
