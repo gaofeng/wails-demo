@@ -1,6 +1,6 @@
 
 import MBClient from './modbus-client'
-import { CustomStream } from './CustomStream'
+import { DuplexStream } from './DuplexStream'
 import MBTCPClientRequestHandler from './tcp-client-request-handler'
 import ModbusTCPClientResponseHandler from './tcp-client-response-handler'
 import ModbusTCPRequest from './tcp-request'
@@ -25,7 +25,7 @@ import ModbusTCPRequest from './tcp-request'
  * })
  *
  */
-export default class ModbusTCPClient extends MBClient<CustomStream, ModbusTCPRequest> {
+export default class ModbusTCPClient extends MBClient<DuplexStream, ModbusTCPRequest> {
   protected _requestHandler: MBTCPClientRequestHandler
   protected _responseHandler: ModbusTCPClientResponseHandler
   protected readonly _unitId: number
@@ -38,7 +38,7 @@ export default class ModbusTCPClient extends MBClient<CustomStream, ModbusTCPReq
    * @param {number} [timeout=5000] Timeout for requests in ms.
    * @memberof ModbusTCPClient
    */
-  constructor (socket: CustomStream, unitId: number = 1, timeout: number = 5000) {
+  constructor (socket: DuplexStream, unitId: number = 1, timeout: number = 5000) {
     super(socket)
 
     this._requestHandler = new MBTCPClientRequestHandler(socket, unitId, timeout)

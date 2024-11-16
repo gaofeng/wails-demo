@@ -3,9 +3,9 @@ const OFFLINE = 'Offline'
 const MODBUS_EXCEPTION = 'ModbusException'
 const MANUALLY_CLEARED = 'ManuallyCleared'
 
-import Debug from 'debug'; 
+import Debug from 'debug';
 const debug = Debug('client-request-handler')
-import {CustomStream} from './CustomStream'
+import {DuplexStream} from './DuplexStream'
 import ModbusAbstractRequest from './abstract-request'
 import ModbusAbstractResponse from './abstract-response'
 import { ModbusRequestBody } from './request'
@@ -17,7 +17,7 @@ import UserRequest, { PromiseUserRequest } from './user-request'
 /** Common Request Handler
  * @abstract
  */
-export default abstract class MBClientRequestHandler<S extends CustomStream, Req extends ModbusAbstractRequest> {
+export default abstract class MBClientRequestHandler<S extends DuplexStream, Req extends ModbusAbstractRequest> {
 
   public get state () {
     return this._state
@@ -236,7 +236,7 @@ export default abstract class MBClientRequestHandler<S extends CustomStream, Req
       this._flush()
     })
 
-    this._socket.write(payload, (err) => {
+    payload && this._socket.write(payload, (err) => {
       debug('request fully flushed, ( error:', err, ')')
     })
   }

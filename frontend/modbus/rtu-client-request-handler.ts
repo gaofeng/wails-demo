@@ -8,14 +8,14 @@ import ModbusRTUResponse from './rtu-response'
 import { UserRequestError } from './user-request-error'
 import UserRequest from './user-request'
 import { Buffer } from 'buffer';
-import { CustomStream } from './CustomStream';
+import { DuplexStream } from './DuplexStream';
 
 /** Modbus/RTU Client Request Handler
  * Implements behaviour for Client Requests for Modbus/RTU
  * @extends MBClientRequestHandler
  * @class
  */
-export default class ModbusRTUClientRequestHandler extends MBClientRequestHandler<CustomStream, ModbusRTURequest> {
+export default class ModbusRTUClientRequestHandler extends MBClientRequestHandler<DuplexStream, ModbusRTURequest> {
   protected _requests: Array<UserRequest<ModbusRTURequest>>
   protected _currentRequest: UserRequest<ModbusRTURequest> | null | undefined
   protected readonly _address: number
@@ -27,7 +27,7 @@ export default class ModbusRTUClientRequestHandler extends MBClientRequestHandle
    * @param {number} [timeout=5000]
    * @memberof ModbusRTUClientRequestHandler
    */
-  constructor (socket: CustomStream, address: number, timeout: number = 5000) {
+  constructor (socket: DuplexStream, address: number, timeout: number = 5000) {
     super(socket, timeout)
     this._address = address
     this._requests = []

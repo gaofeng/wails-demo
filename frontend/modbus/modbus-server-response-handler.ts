@@ -154,7 +154,13 @@ export default class ModbusServerResponseHandler<FR extends ModbusAbstractRespon
       this._server.emit('readHoldingRegisters', request, cb)
       return
     }
-
+    debug('request address:',request.body.start, this._server.holding.length)
+    if (request.body.start >= this._server.holding.length / 2) {
+      const exception_body = new ExceptionResponseBody(request.body.fc, 0x02);
+      const exception_res = this._fromRequest(request, exception_body)
+      cb(exception_res.createPayload())
+      return exception_res;
+    }
     this._server.emit('preReadHoldingRegisters', request, cb)
 
     const responseBody = ReadHoldingRegistersResponseBody.fromRequest(request.body, this._server.holding)

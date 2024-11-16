@@ -3,7 +3,7 @@ import ModbusServer, { IModbusServerOptions } from './modbus-server'
 import ModbusServerClient from './modbus-server-client'
 import ModbusTCPRequest from './tcp-request'
 import ModbusTCPResponse from './tcp-response'
-import { CustomStream } from './CustomStream';
+import { DuplexStream } from './DuplexStream';
 
 export default class ModbusTCPServer extends ModbusServer {
   public _server: ModbusServer
@@ -15,7 +15,7 @@ export default class ModbusTCPServer extends ModbusServer {
     server.on('connection', this._onConnection.bind(this))
   }
 
-  public _onConnection (socket: CustomStream) {
+  public _onConnection (socket: DuplexStream) {
     debug('new connection coming in')
 
     const Request = ModbusTCPRequest.fromBuffer
