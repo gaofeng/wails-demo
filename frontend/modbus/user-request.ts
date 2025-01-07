@@ -1,8 +1,8 @@
 
-import ModbusAbstractRequest from './abstract-request'
-import { RequestToResponse } from './request-response-map'
-import ModbusRTURequest from './rtu-request'
-import ModbusTCPRequest from './tcp-request'
+import type ModbusAbstractRequest from './abstract-request'
+import type { RequestToResponse } from './request-response-map'
+import type ModbusRTURequest from './rtu-request'
+import type ModbusTCPRequest from './tcp-request'
 import { UserRequestError } from './user-request-error'
 import { UserRequestMetrics } from './user-request-metrics'
 
@@ -31,7 +31,7 @@ export default class UserRequest<Req extends ModbusAbstractRequest = any> {
   protected readonly _promise: PromiseUserRequest<Req>
   protected _resolve!: (value: IUserRequestResolve<Req>) => void
   protected _reject!: (err: UserRequestError<RequestToResponse<Req>, Req>) => void
-  protected _timer!: number
+  protected _timer!: NodeJS.Timeout
 
   protected _metrics: UserRequestMetrics
 

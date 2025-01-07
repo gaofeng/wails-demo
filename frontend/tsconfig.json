@@ -1,15 +1,9 @@
 {
-  "extends": "@quasar/app-vite/tsconfig-preset",
+  "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "."
-  },
-  "exclude": [
-    "./dist",
-    "./.quasar",
-    "./node_modules",
-    "./src-capacitor",
-    "./src-cordova",
-    "./quasar.config.*.temporary.compiled*",
-    "./wailsjs/go/**"
-  ]
+    "noImplicitAny": false,
+    "noImplicitOverride": false,
+    "exactOptionalPropertyTypes": false,
+    "strictNullChecks": false,
+  }
 }
