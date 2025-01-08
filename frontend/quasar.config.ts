@@ -72,7 +72,8 @@ export default defineConfig((/* ctx */) => {
             lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
             useFlatConfig: true
           }
-        }, { server: false }]
+        }, { server: false }],
+        ['vite-plugin-vue-devtools', { cliet: true }, { server: false }]
       ]
     },
 
