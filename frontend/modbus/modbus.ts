@@ -1,5 +1,5 @@
 
-/** jsModbus is a node module that enables the developer to interact with modbus/tcp and modbus/rtu server (slaves)
+/** jsModbus is a node.js module that enables the developer to interact with modbus/tcp and modbus/rtu server (slaves)
  * or to create a modbus/tcp server (master).
  * @module jsmodbus
  *
@@ -38,10 +38,8 @@ import ModbusRTUServer from './modbus-rtu-server'
 
 import * as Codes from './codes'
 import * as Errors from './errors'
-import * as Requests from './request'
-import * as Responses from './response'
-import UserRequest from './user-request'
-
+export * as Requests from './request'
+export * as Responses from './response'
 import { LIMITS } from './constants'
 
 export const client = {
@@ -54,12 +52,7 @@ export const server = {
   TCP: ModbusTCPServer
 }
 
-export const requests = {
-  ...Requests,
-  UserRequest
-}
-
-export const responses = Responses
+// export const responses = Responses
 export const codes = Codes
 export const errors = Errors
 export const limits = LIMITS
@@ -69,6 +62,8 @@ export { default as ModbusAbstractResponse } from './abstract-response'
 export { default as MBClientRequestHandler } from './client-request-handler'
 export { default as ModbusClientResponseHandler } from './client-response-handler'
 export { default as ModbusClient } from './modbus-client'
+export { default as ModbusServerClient } from './modbus-server-client'
+export type { BufferCB } from './modbus-server'
 export * from './request-response-map'
 export { default as ModbusTCPRequest } from './tcp-request'
 export { default as ModbusTCPResponse } from './tcp-response'
@@ -77,13 +72,16 @@ export { default as ModbusRTUResponse } from './rtu-response'
 export { UserRequestError } from './user-request-error'
 export {
   default as UserRequest,
+  type ModbusRequest,
+  type IUserRequestResolve as UserRequestResolve,
+  type PromiseUserRequest
 } from './user-request'
-export type {  ModbusRequest,
-  IUserRequestResolve as UserRequestResolve,
-  PromiseUserRequest} from './user-request'
 export {
   UserRequestMetrics
 } from './user-request-metrics'
+
+export type { ModbusAbstractRequestFromBuffer } from './abstract-request'
+export type { ModbusAbstractResponseFromRequest } from './abstract-response'
 
 export {
   ModbusTCPClient,
@@ -91,3 +89,6 @@ export {
   ModbusTCPServer,
   ModbusRTUServer
 }
+
+export { DuplexStream } from './DuplexStream'
+export { DuplexServer } from './DuplexServer'

@@ -24,22 +24,22 @@ export default class ModbusServerRequestHandler<FB extends ModbusAbstractRequest
     this._buffer = Buffer.concat([this._buffer, data])
     debug('this._buffer', this._buffer)
 
+    let request: ModbusAbstractRequest | null = null
     do {
-      const request = this._fromBuffer(this._buffer)
-      debug('request', request)
-
-      if (!request) {
-        return
+      request = this._fromBuffer(this._buffer)
+      if (request) {
+        if (request instanceof ModbusRTURequest) {
+          debug(request.toString())
+          if (request.corrupted) {
+            const corruptDataDump = this._buffer.subarray(0, request.byteCount).toString('hex').replace(/(.{2})/g, '$1 ').trim()
+            debug(`request message was corrupt: ${corruptDataDump}`)
+          } else {
+            this._requests.unshift(request)
+          }
+          // remove the request payload from the buffer
+          this._buffer = this._buffer.subarray(request.byteCount)
+        }
       }
-
-      if (request instanceof ModbusRTURequest && request.corrupted) {
-        const corruptDataDump = this._buffer.slice(0, request.byteCount).toString('hex')
-        debug(`request message was corrupt: ${corruptDataDump}`)
-      } else {
-        this._requests.unshift(request)
-      }
-
-      this._buffer = this._buffer.slice(request.byteCount)
-    } while (1)
+    } while (request != null)
   }
 }

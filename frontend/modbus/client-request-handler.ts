@@ -3,9 +3,9 @@ const OFFLINE = 'Offline'
 const MODBUS_EXCEPTION = 'ModbusException'
 const MANUALLY_CLEARED = 'ManuallyCleared'
 
-import Debug from 'debug';
+import Debug from 'debug'
 const debug = Debug('client-request-handler')
-import {DuplexStream} from './DuplexStream'
+import { DuplexStream } from './DuplexStream'
 import ModbusAbstractRequest from './abstract-request'
 import ModbusAbstractResponse from './abstract-response'
 import { ModbusRequestBody } from './request'
@@ -191,11 +191,13 @@ export default abstract class MBClientRequestHandler<S extends DuplexStream, Req
 
   protected _onClose () {
     this._state = 'offline'
-    this._currentRequest && this._currentRequest.reject(new UserRequestError({
-      err: OFFLINE,
-      message: 'connection to modbus server closed',
-      request: this._currentRequest.request
-    }))
+    if (this._currentRequest) {
+      this._currentRequest.reject(new UserRequestError({
+        err: OFFLINE,
+        message: 'connection to modbus server closed',
+        request: this._currentRequest.request
+      }))
+    }
     this._clearAllRequests()
   }
 
@@ -216,28 +218,29 @@ export default abstract class MBClientRequestHandler<S extends DuplexStream, Req
 
     if (this._state === 'offline') {
       debug('rejecting request immediatly, client offline')
-      this._currentRequest && this._currentRequest.reject(new UserRequestError({
-        err: OFFLINE,
-        message: 'no connection to modbus server',
-        request: this._currentRequest.request
-      }))
+      if (this._currentRequest) {
+        this._currentRequest.reject(new UserRequestError({
+          err: OFFLINE,
+          message: 'no connection to modbus server',
+          request: this._currentRequest.request
+        }))
+      }
       this._clearCurrentRequest()
       /* start next request */
       setTimeout(this._flush.bind(this), 0)
       return
     }
+    if (this._currentRequest) {
+      this._currentRequest.start(() => {
+        this._clearCurrentRequest()
+        this._flush()
+      })
+      const payload = this._currentRequest.createPayload()
 
-    const payload = this._currentRequest && this._currentRequest.createPayload()
-
-    debug('flushing new request', payload)
-
-    this._currentRequest && this._currentRequest.start(() => {
-      this._clearCurrentRequest()
-      this._flush()
-    })
-
-    payload && this._socket.write(payload, (err) => {
-      debug('request fully flushed, ( error:', err, ')')
-    })
+      debug('flushing new request', payload)
+      this._socket.write(payload, (err) => {
+        debug('request fully flushed, ( error:', err, ')')
+      })
+    }
   }
 }

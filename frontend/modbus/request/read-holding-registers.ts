@@ -1,6 +1,8 @@
 import { Buffer } from 'buffer'
 import { FC } from '../codes'
 import ModbusRequestBody from './request-body'
+import Debug from 'debug';
+const debug = Debug('read-holding-registers')
 
 /** Read Holding Registers Request Body
  * @extends ModbusRequestBody
@@ -9,6 +11,10 @@ export default class ReadHoldingRegistersRequestBody extends ModbusRequestBody {
 
   /** Start Address. */
   get start () {
+    return this._start
+  }
+  
+  get address () {
     return this._start
   }
 
@@ -32,6 +38,7 @@ export default class ReadHoldingRegistersRequestBody extends ModbusRequestBody {
       const count = buffer.readUInt16BE(3)
 
       if (fc !== FC.READ_HOLDING_REGISTERS) {
+        debug('Invalid Function Code')
         return null
       }
 

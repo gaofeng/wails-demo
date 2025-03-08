@@ -52,7 +52,7 @@ export default class ModbusRTURequest<ReqBody extends ModbusRequestBody = Modbus
    * @param {Buffer} buffer
    * @return  A new Modbus RTU Request or null.
    */
-  public static fromBuffer (buffer: Buffer) {
+  public static fromBuffer (buffer: Buffer): ModbusRTURequest | null {
     try {
       if (buffer.length < 1 /* address */ + 2 /* CRC */) {
         debug('not enough data in the buffer yet')
@@ -61,20 +61,22 @@ export default class ModbusRTURequest<ReqBody extends ModbusRequestBody = Modbus
 
       const address = buffer.readUInt8(0)
 
-      debug(`rtu header complete, address, ${address}`)
-      debug('buffer', buffer)
+      debug(`rtu header address, ${address}`)
 
       // NOTE: This is potentially more than the body; the body length isn't know at this point...
-      const body = RequestFactory.fromBuffer(buffer.slice(1))
+      const body = RequestFactory.fromBuffer(buffer.subarray(1))
 
       if (!body) {
         return null
       }
 
       const payloadLength = 1 /* address */ + body.byteCount
-      const expectedCrc = CRC.crc16modbus(buffer.slice(0, payloadLength))
+      const expectedCrc = CRC.crc16modbus(buffer.subarray(0, payloadLength))
       const actualCrc = buffer.readUInt16LE(payloadLength)
       const corrupted = (expectedCrc !== actualCrc)
+      if (corrupted) {
+        debug(`rtu request crc failed, expected: 0x${expectedCrc.toString(16)}, actual: 0x${actualCrc.toString(16)}`)
+      }
 
       return new ModbusRTURequest(address, body, corrupted)
     } catch (e) {
@@ -110,5 +112,9 @@ export default class ModbusRTURequest<ReqBody extends ModbusRequestBody = Modbus
     const payload = Buffer.concat([idBuf, bodyPayload, crBu])
 
     return payload
+  }
+
+  public toString() {
+    return `RTU Request: id: ${this.address}, ${this.name},address: ${this.body.address},count: ${this.body.count}`
   }
 }

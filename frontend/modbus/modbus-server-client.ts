@@ -45,20 +45,24 @@ export default class ModbusServerClient<
     debug('new data coming in')
     this._requestHandler.handle(data)
 
+    let request;
     do {
-      const request = this._requestHandler.shift()
-
-      if (!request) {
-        debug('no request to process')
-        /* TODO: close client connection */
-        break
+      request = this._requestHandler.shift()
+      //check id
+      if (request) {
+        if (this.server.id && this.server.id != request.address) {
+          debug('id mismatch', this.server.id, request.address)
+        }
+        else {
+          this._responseHandler.handle(request, (response) => {
+            this._socket.write(response, () => {
+              debug('response flushed', response)
+            })
+          })
+        }
       }
-
-      this._responseHandler.handle(request, (response) => {
-        this._socket.write(response, () => {
-          debug('response flushed', response)
-        })
-      })
-    } while (1)
+    } while (request != null)
+    /* TODO: close client connection */
+    debug('no request to process')
   }
 }
