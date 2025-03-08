@@ -4,6 +4,12 @@ import {Buffer} from 'buffer';
 import { SendData } from 'app/wailsjs/go/main/SerialManager';
 
 export class SerialStream extends DuplexStream {
+  open(): void {
+    throw new Error('Method not implemented.');
+  }
+  close(): void {
+    throw new Error('Method not implemented.');
+  }
   public PortName: string;
   constructor(portName: string) {
     super();

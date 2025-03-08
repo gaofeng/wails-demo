@@ -44,7 +44,7 @@ func (s *SerialManager) OpenPort(portName string, baudRate int) error {
 	if err != nil {
 		return err
 	}
-	runtime.LogDebug(s.ctx, "open port"+portName)
+	runtime.LogDebug(s.ctx, "Open port:"+portName)
 
 	s.ports[portName] = port
 
@@ -77,6 +77,9 @@ func (s *SerialManager) ClosePort(portName string) error {
 	if port, exists := s.ports[portName]; exists {
 		delete(s.ports, portName)
 		err := port.Close()
+		if err == nil {
+			runtime.LogDebug(s.ctx, "Close port:"+portName)
+		}
 		return err
 	}
 	return nil
