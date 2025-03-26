@@ -76,7 +76,7 @@ export default defineConfig((/* ctx */) => {
           },
           { server: false },
         ],
-        ['vite-plugin-vue-devtools', { cliet: true }, { server: false }],
+        ['vite-plugin-vue-devtools', { client: true }, { server: false }],
       ],
     },
 
