@@ -21,8 +21,8 @@
       >
         {{ isOpened ? '关闭串口' : '打开串口' }}
       </q-btn>
+      <div class="q-pa-md">串口描述: {{ selectedPort?.friendlyName || '未选择' }}</div>
     </div>
-    <div class="row items-center">Friendly Name: {{ selectedPort?.friendlyName || '未选择' }}</div>
   </div>
 </template>
 
