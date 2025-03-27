@@ -3,6 +3,7 @@
     <div class="q-pa-md">
       <PortSelector @port-opened="OnPortOpen" @port-closed="OnPortClose" ref="test_select" />
     </div>
+    <q-btn @click="HttpTest">Http Test</q-btn>
   </q-page>
 </template>
 
@@ -22,6 +23,7 @@ import type { ReadHoldingRegistersRequestBody } from 'app/modbus/request'
 import { ReadHoldingRegistersResponseBody } from 'app/modbus/response'
 
 import PortSelector from 'src/components/PortSelector.vue'
+import { api } from 'src/boot/axios'
 
 const debug_log = debug('IndexPage')
 const $q = useQuasar()
@@ -31,15 +33,29 @@ let serial_stream: SerialStream
 
 const selectRef = useTemplateRef('test_select')
 
-onMounted(async () => {
-  console.log('on mounted')
+function ShowMsg(msg: string) {
   $q.notify({
-    message: '页面已加载',
+    message: msg,
     icon: 'info',
     iconColor: 'green',
     position: 'top',
     timeout: 1000,
   })
+}
+
+function ShowErr(msg: string) {
+  $q.notify({
+    message: msg,
+    icon: 'error',
+    iconColor: 'red',
+    position: 'top',
+    timeout: 1000,
+  })
+}
+
+onMounted(async () => {
+  console.log('on mounted')
+  ShowMsg('页面已加载')
   // const list = await GetPortList()
   // if (list) {
   //   for (let i = 0; i < list.length; i++) {
@@ -62,26 +78,31 @@ onUnmounted(() => {
   debug_log('Index page unmounted')
 })
 
+function HttpTest() {
+  api
+    .get('/control/init')
+    .then((response) => {
+      const msg: any = response.data
+      if (msg.success) {
+        ShowMsg('初始化成功!上位机路径为:' + msg.message)
+      } else {
+        ShowErr(msg.message)
+      }
+    })
+    .catch((err) => {
+      ShowErr(err.message)
+    })
+}
+
 function OnPortOpen(portName: string): void {
   console.log(selectRef.value.getSelectedPortInfo())
-  $q.notify({
-    message: `串口${portName}已打开`,
-    icon: 'info',
-    iconColor: 'green',
-    position: 'top',
-    timeout: 1000,
-  })
+  ShowMsg(`串口${portName}已打开`)
   if (portName != null) {
     serial_stream = new SerialStream(portName)
     serial_stream.start()
     serial_stream.on('error', async (err: any) => {
       // await CloseSerialPort()
-      $q.notify({
-        message: '串口读取数据出错' + err,
-        icon: 'error',
-        iconColor: 'red',
-        position: 'top',
-      })
+      ShowErr('串口读取数据出错' + err)
     })
     MBRTUServer = new ModbusRTUServer(serial_stream, {
       holding: undefined,
@@ -93,13 +114,7 @@ function OnPortOpen(portName: string): void {
 }
 
 function OnPortClose(portName: string): void {
-  $q.notify({
-    message: `串口${portName}已关闭`,
-    icon: 'info',
-    iconColor: 'blue',
-    position: 'top',
-    timeout: 1000,
-  })
+  ShowMsg(`串口${portName}已关闭`)
 }
 
 // async function CloseSerialPort() {
