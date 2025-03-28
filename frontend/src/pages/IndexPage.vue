@@ -1,15 +1,34 @@
 <template>
   <q-page>
     <div class="q-pa-md">
-      <PortSelector @port-opened="OnPortOpen" @port-closed="OnPortClose" ref="test_select" />
+      <PortSelector
+        @port-opened="OnPortOpen"
+        @port-closed="OnPortClose"
+        @port-error="OnPortError"
+        app="select1"
+        v-model="openedPortName"
+      />
+      <PortSelector
+        @port-opened="OnPortOpen"
+        @port-closed="OnPortClose"
+        app="select2"
+        v-model="openedPortName2"
+      />
     </div>
-    <q-btn @click="HttpTest">Http Test</q-btn>
+    <div class="q-pa-md q-gutter-md">
+      <q-btn @click="HttpTest">Http Test</q-btn>
+      <q-btn @click="PortTest">Port Test</q-btn>
+    </div>
+    <div>
+      {{ openedPortName }}
+      {{ openedPortName2 }}
+    </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar'
-import { onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { debug } from 'debug'
 import {
   ModbusAbstractRequest,
@@ -25,13 +44,14 @@ import { ReadHoldingRegistersResponseBody } from 'app/modbus/response'
 import PortSelector from 'src/components/PortSelector.vue'
 import { api } from 'src/boot/axios'
 
+const openedPortName = ref<string | null>(null)
+const openedPortName2 = ref<string | null>(null)
+
 const debug_log = debug('IndexPage')
 const $q = useQuasar()
 
 let MBRTUServer: ModbusRTUServer
 let serial_stream: SerialStream
-
-const selectRef = useTemplateRef('test_select')
 
 function ShowMsg(msg: string) {
   $q.notify({
@@ -49,29 +69,13 @@ function ShowErr(msg: string) {
     icon: 'error',
     iconColor: 'red',
     position: 'top',
-    timeout: 1000,
+    timeout: 3000,
   })
 }
 
 onMounted(async () => {
   console.log('on mounted')
   ShowMsg('页面已加载')
-  // const list = await GetPortList()
-  // if (list) {
-  //   for (let i = 0; i < list.length; i++) {
-  //     const sp = {
-  //       label: `${list[i].Name} - ${list[i].Product}`,
-  //       value: list[i].Name,
-  //       friendlyName: list[i].Product,
-  //     }
-  //     splist.value.push(sp)
-  //     if (await PortIsOpen(list[i].Name)) {
-  //       selectedPort.value = sp
-  //       portName.value = sp.value
-  //       isOpened.value = true
-  //     }
-  //   }
-  // }
 })
 
 onUnmounted(() => {
@@ -94,16 +98,19 @@ function HttpTest() {
     })
 }
 
+function PortTest() {
+  ShowMsg(openedPortName.value)
+}
+
 function OnPortOpen(portName: string): void {
-  console.log(selectRef.value.getSelectedPortInfo())
   ShowMsg(`串口${portName}已打开`)
   if (portName != null) {
     serial_stream = new SerialStream(portName)
     serial_stream.start()
-    serial_stream.on('error', async (err: any) => {
-      // await CloseSerialPort()
-      ShowErr('串口读取数据出错' + err)
-    })
+    // serial_stream.on('error', async (err: any) => {
+    //   // await CloseSerialPort()
+    //   ShowErr('串口读取数据出错:' + err)
+    // })
     MBRTUServer = new ModbusRTUServer(serial_stream, {
       holding: undefined,
       coils: undefined,
@@ -117,74 +124,9 @@ function OnPortClose(portName: string): void {
   ShowMsg(`串口${portName}已关闭`)
 }
 
-// async function CloseSerialPort() {
-//   if (selectedPort.value != null) {
-//     serial_stream?.stop()
-//     await ClosePort(selectedPort.value.value)
-//     isOpened.value = false
-//     $q.notify({
-//       message: `串口${portName.value}已关闭`,
-//       icon: 'info',
-//       iconColor: 'blue',
-//       position: 'top',
-//       timeout: 1000,
-//     })
-//   }
-// }
-
-// async function OpenClosePortClicked(): Promise<void> {
-//   if (isOpened.value) {
-//     //关闭串口
-//     await CloseSerialPort()
-//   } else {
-//     //打开串口
-//     try {
-//       if (selectedPort.value != null) {
-//         portName.value = selectedPort.value?.value
-//         openCloseButtonLoading.value = true
-//         await OpenPort(portName.value, 38400)
-//         isOpened.value = true
-
-//         $q.notify({
-//           message: `串口${portName.value}已打开`,
-//           icon: 'info',
-//           iconColor: 'green',
-//           position: 'top',
-//           timeout: 1000,
-//         })
-//       }
-//     } catch (err: any) {
-//       $q.notify({
-//         message: err,
-//         icon: 'error',
-//         iconColor: 'red',
-//         position: 'top',
-//       })
-//       return
-//     } finally {
-//       openCloseButtonLoading.value = false
-//     }
-//     if (portName.value != null) {
-//       serial_stream = new SerialStream(portName.value)
-//       serial_stream.start()
-//       serial_stream.on('error', async (err: any) => {
-//         await CloseSerialPort()
-//         $q.notify({
-//           message: '串口读取数据出错' + err,
-//           icon: 'error',
-//           iconColor: 'red',
-//           position: 'top',
-//         })
-//       })
-//       MBRTUServer = new ModbusRTUServer(serial_stream, {
-//         holding: undefined,
-//         coils: undefined,
-//       })
-
-//       MBRTUServer.on('readHoldingRegisters', readHoldingRegisters)
-//     }
-//   }
-// }
+function OnPortError(portName: string, code: number, msg: string): void {
+  ShowErr(`串口[${portName}]打开失败，错误信息为:${msg}, 错误码为:${code}`)
+}
 
 function readHoldingRegisters(request: ModbusAbstractRequest, cb: BufferCB): void {
   const rtu_request = request as ModbusRTURequest
